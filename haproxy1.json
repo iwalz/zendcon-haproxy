@@ -1,0 +1,22 @@
+{
+    "haproxy": {
+        "source": {
+            "version": "1.5.5",
+            "url": "http://www.haproxy.org/download/1.5/src/haproxy-1.5.5.tar.gz",
+            "checksum": "e8d014e99a025e7d7878d402d30e03666c6d205c630a0b3c25f53a09fff4827c"
+        },
+        "incoming_port":        80
+    },
+    "override_attributes": {
+        "keepalived": {
+            "instance_defaults": {
+                "state": "MASTER",
+                "priority": "101"
+            }
+        }
+    },
+    "run_list": [
+        "recipe[sample::haproxy]"
+    ]
+}
+

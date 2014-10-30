@@ -1,0 +1,83 @@
+global 
+    maxconn 4096
+    daemon
+    #match cipher length
+    tune.ssl.default-dh-param 2048
+    stats socket <%= node.haproxy.conf_dir %>/haproxy.stats mode 600 level admin
+
+defaults 
+    mode http
+    retries 3
+    option redispatch
+    maxconn 4096
+    #prevent slowloris attacks
+    timeout http-request 5000
+    timeout connect 5000
+    timeout client 50000
+    timeout server 50000
+
+frontend www_fe
+    #remember poodle! This rule to completely prevent SSLv3
+    #bind :443 ssl crt <%= node.haproxy.conf_dir %>/sample.pem no-sslv3
+    bind :80
+    bind :443 ssl crt <%= node.haproxy.conf_dir %>/sample.pem
+    option http-server-close
+
+    #This rule to display SSLv3 error message
+    acl sslv3 ssl_fc_protocol SSLv3
+    http-request allow if sslv3
+
+    #detect and reject shellshock requests
+    reqdeny  ^[^:]+:\s*\(\s*\)\s+\{
+    reqdeny  ^[^:]+:\s+.*?(<<[^<;]+){5,}
+
+    http-response add-header LB <%= node.name %>
+
+    #HTTPS only, HTTP will get a redirect with https scheme
+    redirect scheme https if !{ ssl_fc }
+
+    use_backend backend_sslv3 if sslv3
+    use_backend nginx1_backend if { path_beg /nginx1 }
+    use_backend nginx2_backend if { path_beg /nginx2 }
+
+    default_backend www_be
+
+frontend mysql_fe
+    bind :3306
+    mode tcp
+    default_backend mysql_be
+
+backend mysql_be
+    mode tcp
+    option mysql-check user haproxy
+    server mysql1 10.0.0.40:3306 check
+    server mysql2 10.0.0.45:3306 check backup
+
+backend backend_sslv3
+    mode http
+    errorfile 503 <%= node.haproxy.conf_dir %>/pages/poodle.http
+
+backend www_be
+    cookie PHPSESSID prefix
+    option httpchk HEAD /check.txt HTTP/1.0
+    #http-check disable-on-404
+    #10 concurrent connections at low load an 20 on high load (the closer it comes to maxconn value)
+    server nginx1 10.0.0.10:80 cookie nginx1 minconn 10 maxconn 20 weight 2 check
+    server nginx2 10.0.0.15:80 cookie nginx2 minconn 5 maxconn 10 weight 1 check
+    timeout connect 10000
+
+backend nginx1_backend
+    reqrep ^([^\ :]*)\ /nginx1(/.*)     \1\ /\2
+    server nginx1 10.0.0.10:80 cookie nginx1 check
+
+backend nginx2_backend
+    reqrep ^([^\ :]*)\ /nginx2(/.*)     \1\ /\2
+    server nginx2 10.0.0.15:80 cookie nginx1 check
+
+listen statistics
+  bind :8080
+  stats enable
+  stats hide-version
+  stats uri     /
+  stats realm   HAProxy\ Statistics
+  stats auth    zendcon:zendcon

@@ -1,0 +1,24 @@
+{
+    "mysql": {
+        "server_root_password": "zendcon2014",
+        "server_repl_password": "zendcon2014",
+        "server_debian_password": "zendcon2014",
+        "version": "5.6",
+        "port": "3306",
+        "data_dir": "/data/mysql",
+        "allow_remote_root": true,
+        "remote_anonymous_user": true,
+        "remove_test_databases": true,
+        "bind_address": "10.0.0.40"
+    },
+    "mysql-multi": {
+        "master": "10.0.0.40",
+        "slaves": ["10.0.0.45"],
+        "bind_ip": "10.0.0.40",
+        "mysql_slave_user": "replicant",
+        "server_repl_password": "zendcon2014"
+    },
+    "run_list": [
+        "recipe[sample::mysql_master]"
+    ]
+}

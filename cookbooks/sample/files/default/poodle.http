@@ -1,0 +1,18 @@
+HTTP/1.0 200 OK
+Cache-Control: no-cache
+Connection: close
+Content-Type: text/html
+
+<html>
+    <head>
+        <title>SSLv3 detected</title>
+    </head>
+    <body>
+        <h1>You're a poodle</h1>
+        <a href="http://googleonlinesecurity.blogspot.fr/2014/10/this-poodle-bites-exploiting-ssl-30.html">
+            <img src="https://www.poodlescan.com/img/poodle-logo.png">
+        </a>
+        <br>
+        If you want to browse this website, you should upgrade your browser.
+    </body>
+</html>
